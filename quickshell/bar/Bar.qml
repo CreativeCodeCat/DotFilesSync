@@ -29,7 +29,7 @@ PanelWindow {
         spacing: 6
 
         BarButton {
-            glyph: ""
+            glyph: "󰀻"
             command: "qs ipc call apps toggle"
             screenName: bar.screen.name
             accent: Config.tagAccents[0]
