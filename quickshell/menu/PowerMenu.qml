@@ -6,7 +6,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 
-// The power menu, the same six actions as FlexiFlow's powermenu. Open it
+// The power menu, with six actions. Open it
 // with the bar's power button, Super+Shift+E, or
 //   qs ipc call power toggle
 // Click an item, or move with Up/Down and press Return. Number keys 1-6

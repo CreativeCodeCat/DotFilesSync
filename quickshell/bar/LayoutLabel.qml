@@ -48,7 +48,7 @@ Rectangle {
                 const values = readerOut.text.split(/str:\s*/).slice(1).map(s => s.split(/\s/)[0]);
                 if (values.length < 2)
                     return;
-                // show FlexiFlow's symbol for the layout
+                // show the symbol for the layout
                 const symbols = {
                     "master-left": "[]=",
                     "master-center": "|M|",

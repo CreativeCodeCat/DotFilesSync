@@ -134,7 +134,7 @@ Item {
                 { icon: "", label: f[0] },
                 { icon: "", label: f[1] }
             ];
-        console.warn("flexiflow: unknown segment " + name);
+        console.warn("unknown segment " + name);
         return [];
     }
 

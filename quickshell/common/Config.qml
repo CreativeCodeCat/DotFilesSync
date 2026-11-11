@@ -3,7 +3,7 @@ pragma Singleton
 import QtQuick
 
 // Everything the Quickshell bar and hotkeys popup are configured with.
-// The defaults mirror flexiflow_bar's bar.lua and FlexiFlow's tag colors.
+// The defaults match the colors and segments of the original bar.
 // This file replaces both for the Quickshell UI; the Lua config.lua is
 // not read here.
 QtObject {
@@ -33,7 +33,7 @@ QtObject {
     readonly property int updatesInterval: 15 * 60 * 1000
 
     readonly property int tagCount: 10
-    // the tag labels, as in FlexiFlow: Japanese numerals 1 to 10 (0 is 零)
+    // the tag labels: Japanese numerals 1 to 10 (0 is 零)
     readonly property var tagLabels: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "零"]
     readonly property string tagFont: "Noto Sans CJK JP"
     readonly property var tagAccents: [

@@ -1,10 +1,10 @@
-# flexiflow-quickshell
+# Quickshell
 
-FlexiFlow's bar, menus and clipboard history, rewritten in
+The bar, menus and clipboard history, rewritten in
 [Quickshell](https://quickshell.org) for [Hyprland](https://hyprland.org).
 
 Quickshell draws UI; it doesn't manage windows. So this is the UI half
-of FlexiFlow. Hyprland does the tiling, workspaces and keybindings, and
+of the desktop. Hyprland does the tiling, workspaces and keybindings, and
 you configure those in `~/.config/hypr/hyprland.lua`.
 
 ## What's here
@@ -15,7 +15,7 @@ you configure those in `~/.config/hypr/hyprland.lua`.
   the status chips and the system tray. Super+w hides the empty tags, and
   again to show them (`qs ipc call tags toggle`).
 - **Status chips** from `sysinfo.sh`, the same segments as
-  `flexiflow_bar`: updates (paru), kernel, battery, RAM, CPU, keyboard
+  the original bar: updates (paru), kernel, battery, RAM, CPU, keyboard
   layout, desktop, network, volume and clock. Click and scroll run
   commands from `Config.qml`.
 - **App menu**: the menu button, or Super+m, lists your installed apps
@@ -81,7 +81,7 @@ they're missing.
 These are Hyprland's jobs now, not Quickshell's:
 
 - **Tiling and layouts**: Hyprland's `dwindle` or `master` layout. The
-  13 FlexiFlow layouts, gaps, `cfact` and the pertag layouts have no
+  custom layouts, gaps, `cfact` and the pertag layouts have no
   equivalent here.
 - **Scratchpads, rules, window swallowing and restart**: use Hyprland's
   special workspaces, window rules and `exec-once`.

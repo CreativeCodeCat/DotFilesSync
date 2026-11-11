@@ -5,7 +5,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 
-// FlexiFlow's bar, one per monitor: the menu and power buttons, the
+// The bar, one per monitor: the menu and power buttons, the
 // workspaces, the focused window's title, then the status chips and tray.
 PanelWindow {
     id: bar

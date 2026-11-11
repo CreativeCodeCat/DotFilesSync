@@ -1,7 +1,5 @@
--- Hyprland, set up to match FlexiFlow's config.lua (~/.config/flexiflow).
--- Same keys, the same ten tags on workspaces 1-10, the same window rules,
--- scratchpads, autostart and gaps, with the UI in flexiflow-quickshell.
--- What doesn't map one-to-one is noted next to it.
+-- Hyprland config: the same keys, ten tags on workspaces 1-10, window rules,
+-- scratchpads, autostart and gaps, with the UI in the Quickshell bar.
 local mod = "SUPER"
 local smod = "SUPER + SHIFT"
 local altkey = "ALT"
@@ -67,7 +65,7 @@ hl.env("HYPRCURSOR_SIZE", "24")
 hl.config(
     {
         general = {
-            -- FlexiFlow's gaps = 10, both inside and outside
+            -- gaps = 10, both inside and outside
             gaps_in = 10,
             gaps_out = 10,
             border_size = 2,
@@ -81,7 +79,7 @@ hl.config(
             allow_tearing = false,
         },
         decoration = {
-            -- FlexiFlow's windows are square and flat
+            -- windows are square and flat
             rounding = 0,
             active_opacity = 1.0,
             inactive_opacity = 1.0,
@@ -96,7 +94,7 @@ hl.config(
             enabled = false,
         },
         master = {
-            -- FlexiFlow's mfact = 0.5, and new windows go to the master area
+            -- mfact = 0.5, and new windows go to the master area
             mfact = 0.5,
             new_status = "master",
         },
@@ -107,7 +105,7 @@ hl.config(
             force_default_wallpaper = 0,
             disable_hyprland_logo = true,
             -- a terminal is replaced by the GUI app it launched, and comes back
-            -- when that app exits (FlexiFlow's window swallowing)
+            -- when that app exits (window swallowing)
             enable_swallow = true,
             swallow_regex = "^(Alacritty)$",
             swallow_exception_regex = "^(scratchpad_.*)$",
@@ -122,7 +120,7 @@ hl.config(
 hl.config(
     {
         input = {
-            -- from FlexiFlow's keyboard: gb, Caps Lock as Escape, numlock on
+            -- keyboard: gb, Caps Lock as Escape, numlock on
             kb_layout = "gb",
             kb_options = "caps:escape",
             numlock_by_default = true,
@@ -135,8 +133,8 @@ hl.config(
 ---- KEYBINDINGS ----
 ---------------------
 
--- Each layout in the cycle. FlexiFlow has 13; scrolling is left out. "|M|" is
--- FlexiFlow's centered master: the master layout with its master area in the middle.
+-- Each layout in the cycle. scrolling is left out. "|M|" is
+-- the centered master: the master layout with its master area in the middle.
 local layout_cycle = {
     { layout = "master", orientation = "left" },
     { layout = "dwindle" },
@@ -167,7 +165,7 @@ local function toggle_layout()
     )
 end
 
--- Gaps, as in FlexiFlow: "h" is the top and bottom gap, "v" the left and right.
+-- Gaps: "h" is the top and bottom gap, "v" the left and right.
 -- Each press changes them by gap_step pixels.
 local gap_step = 1
 local gaps = { in_h = 10, in_v = 10, out_h = 10, out_v = 10 }
@@ -247,7 +245,7 @@ hl.bind(mod .. " + l", layout_key({ master = "mfact +0.05", scrolling = "colresi
 hl.bind(mod .. " + i", layout_key({ master = "addmaster" }))
 hl.bind(mod .. " + u", layout_key({ master = "removemaster" }))
 
--- the window's share of its column (FlexiFlow's cfact), as a resize
+-- the window's share of its column (cfact), as a resize
 hl.bind(
     smod .. " + h", hl.dsp.window.resize(
         {
@@ -464,7 +462,7 @@ hl.bind(
     }
 )
 
--- the bar (flexiflow-quickshell): toggle it, and the hotkeys popup
+-- the bar (Quickshell): toggle it, and the hotkeys popup
 hl.bind(mod .. " + b", hl.dsp.exec_cmd("qs ipc call bar toggle"))
 hl.bind(mod .. " + w", hl.dsp.exec_cmd("qs ipc call tags toggle"))
 hl.bind(mod .. " + slash", hl.dsp.exec_cmd("qs ipc call hotkeys toggle"))
@@ -482,7 +480,7 @@ hl.bind(
 )
 
 -- mouse: Super + drag moves, Super + right drag resizes, Super + middle
--- click toggles floating (FlexiFlow's ClkClientWin bindings)
+-- click toggles floating (the mouse window bindings)
 hl.bind(
     mod .. " + mouse:272", hl.dsp.window.drag(), {
         mouse = true,
@@ -515,7 +513,7 @@ hl.window_rule(
     }
 )
 
--- tag assignment, as in FlexiFlow's rules: each app opens on its tag.
+-- tag assignment, as in the window rules: each app opens on its tag.
 -- `classes` and `titles` are exact names; any one of them matches.
 tag_rules = {
     {
@@ -650,7 +648,7 @@ function place_windows()
     end
 end
 
--- float-only apps, as in FlexiFlow's floating rules (they stay on the tag
+-- float-only apps, as in the floating rules (they stay on the tag
 -- they open on)
 for _, class in ipairs(
                     {
