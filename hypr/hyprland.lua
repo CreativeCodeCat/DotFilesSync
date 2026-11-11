@@ -135,15 +135,33 @@ hl.config(
 ---- KEYBINDINGS ----
 ---------------------
 
--- Each layout in the cycle. FlexiFlow has 13; Hyprland has its own
--- dwindle and master, so only those two are in the cycle.
+-- Each layout in the cycle. FlexiFlow has 13; scrolling is left out. "|M|" is
+-- FlexiFlow's centered master: the master layout with its master area in the middle.
+local layout_cycle = {
+    { layout = "master", orientation = "left" },
+    { layout = "dwindle" },
+    { layout = "monocle" },
+    { layout = "master", orientation = "center" },
+}
+
 local function toggle_layout()
     local current = hl.get_config("general.layout")
-    local next_layout = (current == "master") and "dwindle" or "master"
+    local orientation = hl.get_config("master.orientation") or "left"
+    local index = 0
+    for i, entry in ipairs(layout_cycle) do
+        if entry.layout == current and (entry.orientation or "left") == orientation then
+            index = i
+            break
+        end
+    end
+    local nxt = layout_cycle[index % #layout_cycle + 1]
     hl.config(
         {
             general = {
-                layout = next_layout,
+                layout = nxt.layout,
+            },
+            master = {
+                orientation = nxt.orientation or "left",
             },
         }
     )
@@ -193,12 +211,24 @@ end
 local all_gaps = { "in_h", "in_v", "out_h", "out_v" }
 local inner_gaps = { "in_h", "in_v" }
 
--- focus / stack (master layout)
-hl.bind(mod .. " + j", hl.dsp.layout("cyclenext"))
-hl.bind(mod .. " + k", hl.dsp.layout("cycleprev"))
-hl.bind(mod .. " + Tab", hl.dsp.layout("cyclenext"))
-hl.bind(smod .. " + j", hl.dsp.layout("swapnext"))
-hl.bind(smod .. " + k", hl.dsp.layout("swapprev"))
+-- Layout messages only exist for some layouts. Sending master's message in
+-- scrolling raises "no such layoutmsg", so each key sends the message for the
+-- layout that's active, and does nothing in layouts that have no equivalent.
+local function layout_key(by_layout)
+    return function()
+        local msg = by_layout[hl.get_config("general.layout")]
+        if msg then
+            hl.dispatch(hl.dsp.layout(msg))
+        end
+    end
+end
+
+-- focus / stack (master and scrolling)
+hl.bind(mod .. " + j", layout_key({ master = "cyclenext", scrolling = "focus r" }))
+hl.bind(mod .. " + k", layout_key({ master = "cycleprev", scrolling = "focus l" }))
+hl.bind(mod .. " + Tab", layout_key({ master = "cyclenext", scrolling = "focus r" }))
+hl.bind(smod .. " + j", layout_key({ master = "swapnext", scrolling = "swapcol r" }))
+hl.bind(smod .. " + k", layout_key({ master = "swapprev", scrolling = "swapcol l" }))
 hl.bind(smod .. " + q", hl.dsp.window.close())
 hl.bind(
     smod .. " + space", hl.dsp.window.float(
@@ -212,10 +242,10 @@ hl.bind(
 hl.bind(mod .. " + space", toggle_layout)
 hl.bind(mod .. " + ctrl + comma", toggle_layout)
 hl.bind(mod .. " + ctrl + period", toggle_layout)
-hl.bind(mod .. " + h", hl.dsp.layout("mfact -0.05"))
-hl.bind(mod .. " + l", hl.dsp.layout("mfact +0.05"))
-hl.bind(mod .. " + i", hl.dsp.layout("addmaster"))
-hl.bind(mod .. " + u", hl.dsp.layout("removemaster"))
+hl.bind(mod .. " + h", layout_key({ master = "mfact -0.05", scrolling = "colresize -conf" }))
+hl.bind(mod .. " + l", layout_key({ master = "mfact +0.05", scrolling = "colresize +conf" }))
+hl.bind(mod .. " + i", layout_key({ master = "addmaster" }))
+hl.bind(mod .. " + u", layout_key({ master = "removemaster" }))
 
 -- the window's share of its column (FlexiFlow's cfact), as a resize
 hl.bind(

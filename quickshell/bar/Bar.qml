@@ -39,6 +39,8 @@ PanelWindow {
             monitorName: bar.screen.name
         }
 
+        LayoutLabel {}
+
         BarButton {
             glyph: ""
             command: "qs ipc call power toggle"
