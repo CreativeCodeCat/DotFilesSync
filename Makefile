@@ -14,7 +14,7 @@ build: ## debug build
 release: ## optimised build in target/release
 	$(CARGO) build --release
 
-install: ## install $(BIN) to ~/.cargo/bin
+install: ## install hyprsync to ~/.cargo/bin
 	$(CARGO) install --path . --force
 
 check: ## run clippy with warnings as errors
