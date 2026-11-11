@@ -11,6 +11,8 @@ hyprsync pull              # ~/.config  ->  this repo
 hyprsync push              # this repo  ->  ~/.config
 hyprsync pull --dry-run    # show what would change, change nothing
 hyprsync push -n           # same, short flag
+hyprsync watch             # pull automatically whenever ~/.config changes
+hyprsync watch --interval 5
 hyprsync help
 ```
 

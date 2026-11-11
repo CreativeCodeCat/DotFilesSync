@@ -4,7 +4,7 @@ PREFIX  ?= /usr
 DESTDIR ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help build release install check pull push pull-dry push-dry clean
+.PHONY: help build release install check pull push watch pull-dry push-dry clean
 
 help: ## show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -27,6 +27,9 @@ pull: ## copy ~/.config folders into this repo
 
 push: ## copy this repo's folders into ~/.config
 	$(CARGO) run --quiet -- push
+
+watch: ## keep the repo in sync with ~/.config as it changes (Ctrl-C to stop)
+	$(CARGO) run --quiet -- watch
 
 pull-dry: ## show what pull would change
 	$(CARGO) run --quiet -- pull --dry-run
