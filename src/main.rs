@@ -3,13 +3,14 @@
 //!   hyprsync pull    copy ~/.config folders into the project
 //!   hyprsync push    copy project folders back into ~/.config
 //!   hyprsync watch   keep the project up to date with ~/.config as it changes
+//!   hyprsync drop    throw away changes: reset the project and ~/.config to the last commit
 
 mod sync;
 
 use std::env;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::process::ExitCode;
+use std::process::{Command, ExitCode};
 use std::thread;
 use std::time::Duration;
 
@@ -22,6 +23,7 @@ USAGE:
     hyprsync pull [--dry-run]            copy ~/.config folders into the project
     hyprsync push [--dry-run]            copy project folders into ~/.config
     hyprsync watch [--interval SECS]     pull whenever ~/.config changes (default 2s)
+    hyprsync drop [--dry-run]            reset the project and ~/.config to the last commit
     hyprsync help                        show this message
 
 pull and push mirror: anything missing on the receiving side is added,
@@ -30,6 +32,11 @@ removed. --dry-run (or -n) prints the changes without making them.
 
 watch only pulls. It never writes to ~/.config, so a live edit there can't
 be overwritten by accident. Stop it with Ctrl-C.
+
+drop throws away every uncommitted change in the hypr and quickshell folders,
+both in the project (including new, untracked files) and in ~/.config, which
+is then made to match the last commit. It stops the hyprsync service while it
+runs and starts it again afterwards. This can't be undone.
 
 ENVIRONMENT:
     HYPRSYNC_DIR      project folder (default: ~/HyprSync)
@@ -56,6 +63,7 @@ fn main() -> ExitCode {
     let result = match command {
         Some("pull") => run(Direction::Pull, dry_run),
         Some("push") => run(Direction::Push, dry_run),
+        Some("drop") => drop_changes(dry_run),
         Some("watch") => match parse_interval(&args) {
             Ok(interval) => watch(interval),
             Err(msg) => {
@@ -147,6 +155,88 @@ fn run(direction: Direction, dry_run: bool) -> io::Result<()> {
         "\n{verb}: {action} {added} added, {updated} updated, {removed} removed"
     );
     Ok(())
+}
+
+/// Throw away every change since the last commit, in the project and in
+/// ~/.config. With `dry_run`, only print what would go.
+fn drop_changes(dry_run: bool) -> io::Result<()> {
+    let project = project_dir()?;
+
+    // what's uncommitted in the project, including new files
+    let mut git_args = vec!["status", "--porcelain", "--"];
+    git_args.extend(FOLDERS);
+    let status = git(&project, &git_args)?;
+    if dry_run {
+        println!("project: would discard {} uncommitted change(s)", status.lines().count());
+        for line in status.lines() {
+            println!("  {line}");
+        }
+        return run(Direction::Push, true);
+    }
+
+    // stop the service first: while it runs it copies ~/.config into the
+    // project, which could bring the discarded edits straight back
+    let was_running = service_running();
+    if was_running {
+        systemctl(&["stop", SERVICE])?;
+    }
+
+    let result = (|| -> io::Result<()> {
+        let mut reset = vec!["reset", "-q", "--"];
+        reset.extend(FOLDERS);
+        git(&project, &reset)?; // unstage everything in the folders
+
+        let mut checkout = vec!["checkout", "--"];
+        checkout.extend(FOLDERS);
+        git(&project, &checkout)?; // back to the last commit
+
+        let mut clean = vec!["clean", "-fdq", "--"];
+        clean.extend(FOLDERS);
+        git(&project, &clean)?; // remove new files the commit doesn't have
+
+        run(Direction::Push, false) // make ~/.config match the project
+    })();
+
+    if was_running {
+        systemctl(&["start", SERVICE])?;
+    }
+
+    if result.is_ok() {
+        println!("drop: discarded {} uncommitted change(s); ~/.config matches the last commit", status.lines().count());
+    }
+    result
+}
+
+const SERVICE: &str = "hyprsync.service";
+
+/// Runs `git -C <project> <args>` and returns its stdout.
+fn git(project: &Path, args: &[&str]) -> io::Result<String> {
+    let out = Command::new("git").arg("-C").arg(project).args(args).output()?;
+    if !out.status.success() {
+        return Err(io::Error::other(format!(
+            "git {}: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&out.stderr).trim()
+        )));
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+}
+
+fn service_running() -> bool {
+    Command::new("systemctl")
+        .args(["--user", "is-active", "--quiet", SERVICE])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
+fn systemctl(args: &[&str]) -> io::Result<()> {
+    let status = Command::new("systemctl").arg("--user").args(args).status()?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(io::Error::other(format!("systemctl --user {} failed", args.join(" "))))
+    }
 }
 
 /// Poll ~/.config and pull changes into the project until interrupted.
