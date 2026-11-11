@@ -1,5 +1,7 @@
-CARGO ?= cargo
-BIN   ?= hyprsync
+CARGO   ?= cargo
+BIN     ?= hyprsync
+PREFIX  ?= /usr
+DESTDIR ?=
 
 .DEFAULT_GOAL := help
 .PHONY: help build release install check pull push pull-dry push-dry clean
@@ -14,8 +16,8 @@ build: ## debug build
 release: ## optimised build in target/release
 	$(CARGO) build --release
 
-install: ## install hyprsync to ~/.cargo/bin
-	$(CARGO) install --path . --force
+install: release ## install hyprsync to $(PREFIX)/bin (use sudo for /usr)
+	install -Dm755 target/release/$(BIN) $(DESTDIR)$(PREFIX)/bin/$(BIN)
 
 check: ## run clippy with warnings as errors
 	$(CARGO) clippy -- -D warnings
