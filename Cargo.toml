@@ -1,0 +1,10 @@
+[package]
+name = "hyprsync"
+version = "0.1.0"
+edition = "2021"
+description = "Mirror ~/.config/hypr and ~/.config/quickshell into a dotfiles folder and back"
+
+[dependencies]
+
+[profile.release]
+strip = true
