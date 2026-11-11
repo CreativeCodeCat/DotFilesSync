@@ -1,0 +1,10 @@
+[Unit]
+Description=Keep the HyprSync repo in step with ~/.config/hypr and ~/.config/quickshell
+
+[Service]
+ExecStart=@BINDIR@/hyprsync watch
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

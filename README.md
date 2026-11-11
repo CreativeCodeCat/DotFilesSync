@@ -46,8 +46,15 @@ Requires a Rust toolchain (`cargo`).
 ```sh
 git clone git@github.com:CreativeCodeCat/HyprSync.git
 cd HyprSync
-cargo install --path .     # installs hyprsync to ~/.cargo/bin
+make release              # build as your user
+sudo make install         # copy hyprsync to /usr/bin and the systemd unit to /usr/lib/systemd/user
+make enable               # run as your user: start watching now and at login
 ```
+
+`make install` only copies files, so run `make release` first. `make enable`
+must run as your user, not with sudo. `make disable` stops the service and
+`sudo make uninstall` removes the files. Set `PREFIX=~/.local` to install
+without root, which puts the binary in `~/.local/bin`.
 
 ## Configuration
 

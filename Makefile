@@ -3,8 +3,12 @@ BIN     ?= hyprsync
 PREFIX  ?= /usr
 DESTDIR ?=
 
+BINDIR      = $(PREFIX)/bin
+USERUNITDIR = $(PREFIX)/lib/systemd/user
+UNIT        = hyprsync.service
+
 .DEFAULT_GOAL := help
-.PHONY: help build release install check pull push watch pull-dry push-dry clean
+.PHONY: help build release install uninstall enable disable check pull push watch pull-dry push-dry clean
 
 help: ## show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | \
@@ -16,8 +20,22 @@ build: ## debug build
 release: ## optimised build in target/release
 	$(CARGO) build --release
 
-install: release ## install hyprsync to $(PREFIX)/bin (use sudo for /usr)
-	install -Dm755 target/release/$(BIN) $(DESTDIR)$(PREFIX)/bin/$(BIN)
+# install copies prebuilt files only, so run `make release` first. That way
+# `sudo make install` never runs cargo as root.
+install: ## install $(BIN) and the systemd user unit (run `make release` first)
+	install -Dm755 target/release/$(BIN) $(DESTDIR)$(BINDIR)/$(BIN)
+	sed 's|@BINDIR@|$(BINDIR)|' systemd/$(UNIT).in > target/$(UNIT)
+	install -Dm644 target/$(UNIT) $(DESTDIR)$(USERUNITDIR)/$(UNIT)
+
+uninstall: ## remove the binary and the systemd unit
+	rm -f $(DESTDIR)$(BINDIR)/$(BIN) $(DESTDIR)$(USERUNITDIR)/$(UNIT)
+
+enable: ## start watching now and at login (run as your user, not sudo)
+	systemctl --user daemon-reload
+	systemctl --user enable --now $(UNIT)
+
+disable: ## stop the watch service and stop it starting at login
+	systemctl --user disable --now $(UNIT)
 
 check: ## run clippy with warnings as errors
 	$(CARGO) clippy -- -D warnings
