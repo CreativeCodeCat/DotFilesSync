@@ -149,19 +149,49 @@ local function toggle_layout()
     )
 end
 
+-- Gaps, as in FlexiFlow: "h" is the top and bottom gap, "v" the left and right.
+-- Each press changes them by gap_step pixels.
+local gap_step = 1
+local gaps = { in_h = 10, in_v = 10, out_h = 10, out_v = 10 }
 local gaps_on = true
-local function toggle_gaps()
-    gaps_on = not gaps_on
-    local gap = gaps_on and 10 or 0
+
+local function apply_gaps()
+    local f = gaps_on and 1 or 0
+    local function sides(h, v)
+        return { top = h * f, right = v * f, bottom = h * f, left = v * f }
+    end
     hl.config(
         {
             general = {
-                gaps_in = gap,
-                gaps_out = gap,
+                gaps_in = sides(gaps.in_h, gaps.in_v),
+                gaps_out = sides(gaps.out_h, gaps.out_v),
             },
         }
     )
 end
+
+-- changes the named gaps by delta, and turns gaps back on if they were toggled off
+local function adjust_gaps(names, delta)
+    gaps_on = true
+    for _, name in ipairs(names) do
+        gaps[name] = math.max(0, gaps[name] + delta)
+    end
+    apply_gaps()
+end
+
+local function toggle_gaps()
+    gaps_on = not gaps_on
+    apply_gaps()
+end
+
+local function reset_gaps()
+    gaps = { in_h = 10, in_v = 10, out_h = 10, out_v = 10 }
+    gaps_on = true
+    apply_gaps()
+end
+
+local all_gaps = { "in_h", "in_v", "out_h", "out_v" }
+local inner_gaps = { "in_h", "in_v" }
 
 -- focus / stack (master layout)
 hl.bind(mod .. " + j", hl.dsp.layout("cyclenext"))
@@ -207,8 +237,14 @@ hl.bind(
     )
 )
 
--- gaps
+-- gaps: Shift+Super+U grows all gaps and Shift+Super+I grows the inner ones;
+-- Super+Ctrl+Shift+U and Super+Ctrl+Shift+I shrink them again
 hl.bind(mod .. " + g", toggle_gaps)
+hl.bind(smod .. " + u", function() adjust_gaps(all_gaps, gap_step) end)
+hl.bind(mod .. " + ctrl + shift + u", function() adjust_gaps(all_gaps, -gap_step) end)
+hl.bind(smod .. " + i", function() adjust_gaps(inner_gaps, gap_step) end)
+hl.bind(mod .. " + ctrl + shift + i", function() adjust_gaps(inner_gaps, -gap_step) end)
+hl.bind(mod .. " + ctrl + shift + d", reset_gaps)
 
 -- screens / monitors
 hl.bind(
