@@ -658,7 +658,8 @@ for _, class in ipairs(
     )
 end
 
--- scratchpads: their windows go straight to their special workspace
+-- scratchpads: their windows go straight to their special workspace, float,
+-- and are centered at half the screen's width and height
 hl.window_rule(
     {
         name = "scratchpad-terminal",
@@ -666,6 +667,9 @@ hl.window_rule(
             class = "^scratchpad_terminal$",
         },
         workspace = "special:scratchpad_terminal silent",
+        float = true,
+        size = "monitor_w*0.5 monitor_h*0.5",
+        center = true,
     }
 )
 hl.window_rule(
@@ -675,5 +679,8 @@ hl.window_rule(
             class = "^scratchpad_btop$",
         },
         workspace = "special:scratchpad_btop silent",
+        float = true,
+        size = "monitor_w*0.5 monitor_h*0.5",
+        center = true,
     }
 )
