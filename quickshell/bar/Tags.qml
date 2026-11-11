@@ -24,6 +24,11 @@ RowLayout {
         return null;
     }
 
+    // a color t of the way from a to b (QML has no Qt.mix)
+    function mixColor(a, b, t) {
+        return Qt.rgba(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t, 1);
+    }
+
     Repeater {
         model: Config.tagCount
 
@@ -35,6 +40,26 @@ RowLayout {
             readonly property int tagId: index + 1
             readonly property var ws: root.workspace(tagId)
             readonly property bool active: ws ? ws.active : false
+
+            // a window on this tag has asked for attention (say, a link opened
+            // in Chrome from Discord): the tag blinks until you go to it
+            readonly property bool urgent: {
+                const list = Hyprland.toplevels.values;
+                for (let i = 0; i < list.length; i++) {
+                    const t = list[i];
+                    if (t.urgent && t.workspace?.id === tagId)
+                        return true;
+                }
+                return false;
+            }
+            property real blink: 0
+            SequentialAnimation on blink {
+                running: tag.urgent && !tag.active
+                loops: Animation.Infinite
+                NumberAnimation { to: 1; duration: 350 }
+                NumberAnimation { to: 0; duration: 350 }
+                onStopped: tag.blink = 0
+            }
             readonly property bool occupied: ws ? (ws.lastIpcObject?.windows ?? 0) > 0 : false
 
             // with Super+w on, an empty tag that is not active is hidden
@@ -56,13 +81,22 @@ RowLayout {
                 ColorAnimation { duration: 120 }
             }
 
+            // the blink: the tag's own color, fading in and out behind the label
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                color: tag.accent
+                opacity: tag.blink
+            }
+
             Text {
                 anchors.centerIn: parent
                 text: Config.tagLabels[tag.index]
                 font.family: Config.tagFont
                 font.pixelSize: Config.fontSize
                 font.bold: tag.active
-                color: tag.active ? Config.fg : Config.text
+                // the label goes to the dark foreground as the blink fills the tag
+                color: tag.active ? Config.fg : root.mixColor(Config.text, Config.fg, tag.blink)
             }
 
             MouseArea {
