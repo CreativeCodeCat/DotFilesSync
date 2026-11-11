@@ -22,10 +22,17 @@ release: ## optimised build in target/release
 
 # install copies prebuilt files only, so run `make release` first. That way
 # `sudo make install` never runs cargo as root.
-install: ## install $(BIN) and the systemd user unit (run `make release` first)
+install: ## install $(BIN), the systemd unit, and enable it if run via sudo (run `make release` first)
 	install -Dm755 target/release/$(BIN) $(DESTDIR)$(BINDIR)/$(BIN)
 	sed 's|@BINDIR@|$(BINDIR)|' systemd/$(UNIT).in > target/$(UNIT)
 	install -Dm644 target/$(UNIT) $(DESTDIR)$(USERUNITDIR)/$(UNIT)
+	@if [ -n "$$SUDO_USER" ] && [ -z "$(DESTDIR)" ]; then \
+		uid=$$(id -u "$$SUDO_USER"); \
+		run="runuser -u $$SUDO_USER -- env XDG_RUNTIME_DIR=/run/user/$$uid systemctl --user"; \
+		$$run daemon-reload && $$run enable --now $(UNIT) \
+			&& echo "enabled $(UNIT) for $$SUDO_USER" \
+			|| echo "could not enable $(UNIT) for $$SUDO_USER; run 'make enable' as your user"; \
+	fi
 
 uninstall: ## remove the binary and the systemd unit
 	rm -f $(DESTDIR)$(BINDIR)/$(BIN) $(DESTDIR)$(USERUNITDIR)/$(UNIT)
