@@ -1,6 +1,7 @@
 import "../common"
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 
@@ -18,6 +19,8 @@ PanelWindow {
         right: true
     }
     exclusiveZone: implicitHeight
+    // above the special workspaces (scratchpads), so the bar stays clickable
+    WlrLayershell.layer: WlrLayer.Overlay
 
     RowLayout {
         anchors.fill: parent

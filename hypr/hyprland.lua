@@ -330,37 +330,20 @@ for i, key in ipairs(
     )
 end
 
--- Scratchpads (special workspaces), Alt+Return and Alt+b. Like FlexiFlow's,
--- one is started on first use, and started again if it was closed or its
--- app exited, so toggling always shows a scratchpad.
-function toggle_scratchpad(class, cmd, name)
-    local present = #hl.get_windows(
-                        {
-            class = class,
-        }
-                    ) > 0
-    local function show() hl.dispatch(hl.dsp.workspace.toggle_special(name)) end
-    if present then
-        show()
-        return
-    end
-    hl.exec_cmd(cmd)
-    -- the new window's rule sends it to the special workspace; show that
-    -- once it has mapped
-    hl.timer(
-        show, {
-            timeout = 500,
-            type = "oneshot",
-        }
-    )
+-- Scratchpads, Alt+Return and Alt+b. Each lives on a hidden workspace (90 and
+-- 91) and is moved onto the workspace you're on when shown, so the windows
+-- around it stay clickable. scratchpad.sh does the moving; it also starts the
+-- scratchpad if it isn't running, so toggling always shows one.
+local function toggle_scratchpad(class, hidden, cmd)
+    hl.exec_cmd("sh $HOME/.config/hypr/scratchpad.sh " .. class .. " " .. hidden .. " " .. cmd)
 end
 
 hl.bind(
     altkey .. " + Return", function()
         toggle_scratchpad(
             "scratchpad_terminal",
-            "alacritty --title=scratchpad_terminal --class=scratchpad_terminal,scratchpad_terminal",
-            "scratchpad_terminal"
+            90,
+            "alacritty --title=scratchpad_terminal --class=scratchpad_terminal,scratchpad_terminal"
         )
     end
 )
@@ -368,8 +351,8 @@ hl.bind(
     altkey .. " + b", function()
         toggle_scratchpad(
             "scratchpad_btop",
-            "alacritty --class=scratchpad_btop,scratchpad_btop -e btop",
-            "scratchpad_btop"
+            91,
+            "alacritty --class=scratchpad_btop,scratchpad_btop -e btop"
         )
     end
 )
@@ -666,7 +649,7 @@ hl.window_rule(
         match = {
             class = "^scratchpad_terminal$",
         },
-        workspace = "special:scratchpad_terminal silent",
+        workspace = "90 silent",
         float = true,
         size = "monitor_w*0.5 monitor_h*0.5",
         center = true,
@@ -678,7 +661,7 @@ hl.window_rule(
         match = {
             class = "^scratchpad_btop$",
         },
-        workspace = "special:scratchpad_btop silent",
+        workspace = "91 silent",
         float = true,
         size = "monitor_w*0.5 monitor_h*0.5",
         center = true,
