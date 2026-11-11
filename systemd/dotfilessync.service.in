@@ -1,0 +1,11 @@
+[Unit]
+Description=Keep the folders listed in ~/.config/dotfilesync/config.lua in step with ~/.config
+
+[Service]
+WorkingDirectory=@PROJECTDIR@
+ExecStart=@BINDIR@/DotFilesSync watch
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

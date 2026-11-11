@@ -1,11 +1,11 @@
 CARGO   ?= cargo
-BIN     ?= hyprsync
+BIN     ?= DotFilesSync
 PREFIX  ?= /usr
 DESTDIR ?=
 
 BINDIR      = $(PREFIX)/bin
 USERUNITDIR = $(PREFIX)/lib/systemd/user
-UNIT        = hyprsync.service
+UNIT        = dotfilessync.service
 
 .DEFAULT_GOAL := help
 .PHONY: help build release install uninstall enable disable check pull push watch pull-dry push-dry clean
@@ -24,7 +24,7 @@ release: ## optimised build in target/release
 # `sudo make install` never runs cargo as root.
 install: ## install $(BIN), the systemd unit, and enable it if run via sudo (run `make release` first)
 	install -Dm755 target/release/$(BIN) $(DESTDIR)$(BINDIR)/$(BIN)
-	sed 's|@BINDIR@|$(BINDIR)|' systemd/$(UNIT).in > target/$(UNIT)
+	sed -e 's|@BINDIR@|$(BINDIR)|' -e 's|@PROJECTDIR@|$(CURDIR)|' systemd/$(UNIT).in > target/$(UNIT)
 	install -Dm644 target/$(UNIT) $(DESTDIR)$(USERUNITDIR)/$(UNIT)
 	@if [ -n "$$SUDO_USER" ] && [ -z "$(DESTDIR)" ]; then \
 		uid=$$(id -u "$$SUDO_USER"); \

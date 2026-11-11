@@ -1,10 +1,15 @@
 [package]
-name = "hyprsync"
+name = "dotfilessync"
 version = "0.1.0"
 edition = "2021"
-description = "Mirror ~/.config/hypr and ~/.config/quickshell into a dotfiles folder and back"
+description = "Mirror the ~/.config folders listed in config.lua into a dotfiles folder and back"
 
 [dependencies]
+mlua = { version = "0.12.2", features = ["lua54", "vendored"] }
+
+[[bin]]
+name = "DotFilesSync"
+path = "src/main.rs"
 
 [profile.release]
 strip = true

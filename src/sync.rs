@@ -11,9 +11,6 @@ use std::io::{self, ErrorKind};
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::path::{Path, PathBuf};
 
-/// Folders under the config root that get synced into the project.
-pub const FOLDERS: &[&str] = &["hypr", "quickshell"];
-
 /// Names skipped at any depth, on both sides.
 const IGNORED: &[&str] = &[".git", "__pycache__", ".DS_Store"];
 

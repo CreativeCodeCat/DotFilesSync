@@ -1,10 +1,12 @@
-//! hyprsync: keep ~/.config/{hypr,quickshell} and the HyprSync folder in step.
+//! DotFilesSync: keep the folders listed in ~/.config/dotfilesync/config.lua
+//! in step between ~/.config and the current folder.
 //!
-//!   hyprsync pull    copy ~/.config folders into the project
-//!   hyprsync push    copy project folders back into ~/.config
-//!   hyprsync watch   keep the project up to date with ~/.config as it changes
-//!   hyprsync drop    throw away changes: reset the project and ~/.config to the last commit
+//!   DotFilesSync pull    copy ~/.config folders into the project
+//!   DotFilesSync push    copy project folders back into ~/.config
+//!   DotFilesSync watch   keep the project up to date with ~/.config as it changes
+//!   DotFilesSync drop    throw away changes: reset the project and ~/.config to the last commit
 
+mod config;
 mod sync;
 
 use std::env;
@@ -14,17 +16,17 @@ use std::process::{Command, ExitCode};
 use std::thread;
 use std::time::Duration;
 
-use sync::{Change, Kind, FOLDERS};
+use sync::{Change, Kind};
 
 const USAGE: &str = "\
-hyprsync: mirror ~/.config/{hypr,quickshell} with the HyprSync folder
+DotFilesSync: mirror the folders listed in config.lua between ~/.config and the current folder
 
 USAGE:
-    hyprsync pull [--dry-run]            copy ~/.config folders into the project
-    hyprsync push [--dry-run]            copy project folders into ~/.config
-    hyprsync watch [--interval SECS]     pull whenever ~/.config changes (default 2s)
-    hyprsync drop [--dry-run]            reset the project and ~/.config to the last commit
-    hyprsync help                        show this message
+    DotFilesSync pull [--dry-run]            copy ~/.config folders into the project
+    DotFilesSync push [--dry-run]            copy project folders into ~/.config
+    DotFilesSync watch [--interval SECS]     pull whenever ~/.config changes (default 2s)
+    DotFilesSync drop [--dry-run]            reset the project and ~/.config to the last commit
+    DotFilesSync help                        show this message
 
 pull and push mirror: anything missing on the receiving side is added,
 anything changed is overwritten, and anything no longer in the source is
@@ -33,14 +35,19 @@ removed. --dry-run (or -n) prints the changes without making them.
 watch only pulls. It never writes to ~/.config, so a live edit there can't
 be overwritten by accident. Stop it with Ctrl-C.
 
-drop throws away every uncommitted change in the hypr and quickshell folders,
+drop throws away every uncommitted change in the synced folders,
 both in the project (including new, untracked files) and in ~/.config, which
-is then made to match the last commit. It stops the hyprsync service while it
+is then made to match the last commit. It stops the DotFilesSync service while it
 runs and starts it again afterwards. This can't be undone.
 
+CONFIG:
+    ~/.config/dotfilesync/config.lua lists the folders to sync, for example:
+        return { folders = { \"hypr\", \"quickshell\" } }
+    The file is required. DotFilesSync stops with an error if it is missing.
+
 ENVIRONMENT:
-    HYPRSYNC_DIR      project folder (default: ~/HyprSync)
-    HYPRSYNC_CONFIG   config folder  (default: ~/.config)
+    HYPRSYNC_DIR      project folder (default: the current directory)
+    HYPRSYNC_CONFIG   config root    (default: ~/.config)
 ";
 
 #[derive(Clone, Copy)]
@@ -67,7 +74,7 @@ fn main() -> ExitCode {
         Some("watch") => match parse_interval(&args) {
             Ok(interval) => watch(interval),
             Err(msg) => {
-                eprintln!("hyprsync: {msg}");
+                eprintln!("DotFilesSync: {msg}");
                 return ExitCode::from(2);
             }
         },
@@ -76,7 +83,7 @@ fn main() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         Some(other) => {
-            eprintln!("hyprsync: unknown command '{other}'\n");
+            eprintln!("DotFilesSync: unknown command '{other}'\n");
             eprint!("{USAGE}");
             return ExitCode::from(2);
         }
@@ -85,7 +92,7 @@ fn main() -> ExitCode {
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("hyprsync: {e}");
+            eprintln!("DotFilesSync: {e}");
             ExitCode::FAILURE
         }
     }
@@ -111,17 +118,23 @@ fn parse_interval(args: &[String]) -> Result<Duration, String> {
     }
 }
 
+/// The folders to sync, from `config.lua` under the config root.
+fn folders(config: &Path) -> io::Result<Vec<String>> {
+    config::load(&config.join("dotfilesync").join("config.lua"))
+}
+
 fn run(direction: Direction, dry_run: bool) -> io::Result<()> {
     let config = config_dir()?;
     let project = project_dir()?;
+    let folders = folders(&config)?;
 
     // Plan every folder before touching anything, so a problem with one
     // folder stops the whole run instead of leaving a half-done sync.
     let mut jobs = Vec::new();
-    for folder in FOLDERS {
+    for folder in &folders {
         let (src, dst) = endpoints(direction, &config, &project, folder);
         let changes = sync::plan(&src, &dst)?;
-        jobs.push((*folder, src, dst, changes));
+        jobs.push((folder.as_str(), src, dst, changes));
     }
 
     let verb = match direction {
@@ -160,11 +173,14 @@ fn run(direction: Direction, dry_run: bool) -> io::Result<()> {
 /// Throw away every change since the last commit, in the project and in
 /// ~/.config. With `dry_run`, only print what would go.
 fn drop_changes(dry_run: bool) -> io::Result<()> {
+    let config = config_dir()?;
     let project = project_dir()?;
+    let folders = folders(&config)?;
+    let names: Vec<&str> = folders.iter().map(String::as_str).collect();
 
     // what's uncommitted in the project, including new files
     let mut git_args = vec!["status", "--porcelain", "--"];
-    git_args.extend(FOLDERS);
+    git_args.extend(&names);
     let status = git(&project, &git_args)?;
     if dry_run {
         println!("project: would discard {} uncommitted change(s)", status.lines().count());
@@ -183,15 +199,15 @@ fn drop_changes(dry_run: bool) -> io::Result<()> {
 
     let result = (|| -> io::Result<()> {
         let mut reset = vec!["reset", "-q", "--"];
-        reset.extend(FOLDERS);
+        reset.extend(&names);
         git(&project, &reset)?; // unstage everything in the folders
 
         let mut checkout = vec!["checkout", "--"];
-        checkout.extend(FOLDERS);
+        checkout.extend(&names);
         git(&project, &checkout)?; // back to the last commit
 
         let mut clean = vec!["clean", "-fdq", "--"];
-        clean.extend(FOLDERS);
+        clean.extend(&names);
         git(&project, &clean)?; // remove new files the commit doesn't have
 
         run(Direction::Push, false) // make ~/.config match the project
@@ -207,7 +223,7 @@ fn drop_changes(dry_run: bool) -> io::Result<()> {
     result
 }
 
-const SERVICE: &str = "hyprsync.service";
+const SERVICE: &str = "dotfilessync.service";
 
 /// Runs `git -C <project> <args>` and returns its stdout.
 fn git(project: &Path, args: &[&str]) -> io::Result<String> {
@@ -241,28 +257,31 @@ fn systemctl(args: &[&str]) -> io::Result<()> {
 
 /// Poll ~/.config and pull changes into the project until interrupted.
 ///
-/// Errors from a single pass are printed and the loop carries on. Editors
-/// often save by replacing a file, so a pass can catch a folder half-written.
+/// The folder list is read once, when watch starts; restart the service
+/// after editing config.lua. Errors from a single pass are printed and the
+/// loop carries on. Editors often save by replacing a file, so a pass can
+/// catch a folder half-written.
 fn watch(interval: Duration) -> io::Result<()> {
     let config = config_dir()?;
     let project = project_dir()?;
+    let folders = folders(&config)?;
     println!(
         "watching {} every {}s (Ctrl-C to stop)",
-        FOLDERS.iter().map(|f| config.join(f).display().to_string()).collect::<Vec<_>>().join(", "),
+        folders.iter().map(|f| config.join(f).display().to_string()).collect::<Vec<_>>().join(", "),
         interval.as_secs_f64()
     );
 
     loop {
-        if let Err(e) = pull_changes(&config, &project) {
-            eprintln!("hyprsync: {e}");
+        if let Err(e) = pull_changes(&config, &project, &folders) {
+            eprintln!("DotFilesSync: {e}");
         }
         thread::sleep(interval);
     }
 }
 
 /// One watch pass: pull any folder that differs, and print only what changed.
-fn pull_changes(config: &Path, project: &Path) -> io::Result<()> {
-    for folder in FOLDERS {
+fn pull_changes(config: &Path, project: &Path, folders: &[String]) -> io::Result<()> {
+    for folder in folders {
         let (src, dst) = endpoints(Direction::Pull, config, project, folder);
         let changes = sync::plan(&src, &dst)?;
         if changes.is_empty() {
@@ -311,6 +330,6 @@ fn config_dir() -> io::Result<PathBuf> {
 fn project_dir() -> io::Result<PathBuf> {
     match env::var_os("HYPRSYNC_DIR") {
         Some(p) => Ok(PathBuf::from(p)),
-        None => Ok(home()?.join("HyprSync")),
+        None => env::current_dir(),
     }
 }
