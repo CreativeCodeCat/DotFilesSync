@@ -53,8 +53,7 @@ make enable               # run as your user: start watching now and at login
 
 `make install` only copies files, so run `make release` first. `make enable`
 must run as your user, not with sudo. `make disable` stops the service and
-`sudo make uninstall` removes the files. Set `PREFIX=~/.local` to install
-without root, which puts the binary in `~/.local/bin`.
+`sudo make uninstall` removes the files.
 
 ## Configuration
 
