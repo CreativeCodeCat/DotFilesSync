@@ -537,7 +537,7 @@ tag_rules = {
     },
     {
         classes = {
-            "dolphin",
+            "org.kde.dolphin",
         },
         tag = 3,
     },
