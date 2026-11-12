@@ -68,11 +68,13 @@ QtObject {
         volume: {
             left: "pavucontrol",
             middle: "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+            right: "pavucontrol",
             scroll_up: "pactl set-sink-volume @DEFAULT_SINK@ +5%",
             scroll_down: "pactl set-sink-volume @DEFAULT_SINK@ -5%"
         },
         network: {
-            left: "nm-connection-editor"
+            left: "nm-connection-editor",
+            right: "nm-connection-editor"
         }
     })
 

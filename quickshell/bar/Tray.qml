@@ -1,9 +1,10 @@
+import Quickshell._Window
 import Quickshell.Services.SystemTray
 import QtQuick
 import QtQuick.Layouts
 
 // The system tray. Left click activates an item, middle click runs its
-// secondary action. Right-click menus aren't drawn yet.
+// secondary action, right click opens the item's menu at the click.
 RowLayout {
     spacing: 4
 
@@ -23,11 +24,17 @@ RowLayout {
 
             MouseArea {
                 anchors.fill: parent
-                acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                 onClicked: mouse => {
                     if (mouse.button === Qt.LeftButton)
                         parent.modelData.activate();
-                    else
+                    else if (mouse.button === Qt.RightButton) {
+                        // open the menu at the click, on this bar's window
+                        if (parent.modelData.hasMenu) {
+                            const p = mapToItem(null, mouse.x, mouse.y);
+                            parent.modelData.display(QsWindow.window, p.x, p.y);
+                        }
+                    } else
                         parent.modelData.secondaryActivate();
                 }
             }

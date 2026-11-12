@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 import "desktop"
 import Quickshell
 import QtQuick
