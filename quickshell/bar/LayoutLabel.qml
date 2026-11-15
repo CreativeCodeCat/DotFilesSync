@@ -3,8 +3,8 @@ import Quickshell.Io
 import QtQuick
 
 // The current Hyprland layout (master, dwindle, monocle or scrolling), read
-// from `hyprctl getoption general:layout` once a second, since the layout
-// is changed from the config's own keys.
+// from `hyprctl getoption general:layout` once a second. Clicking it cycles
+// the layout through the config's bar_toggle_layout (see hyprland.lua).
 Rectangle {
     id: label
 
@@ -27,6 +27,16 @@ Rectangle {
         font.family: Config.font
         font.pixelSize: Config.fontSize
         color: Config.text
+    }
+
+    // runs the config's layout cycle, the same one as the layout keybinds
+    Spawn {
+        id: spawn
+    }
+
+    MouseArea {
+        anchors.fill: parent
+        onClicked: spawn.runArgv(["hyprctl", "eval", "bar_toggle_layout()"])
     }
 
     Timer {

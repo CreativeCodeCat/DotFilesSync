@@ -165,6 +165,9 @@ local function toggle_layout()
     )
 end
 
+-- the bar's layout label calls this through `hyprctl eval` when clicked
+bar_toggle_layout = toggle_layout
+
 -- Gaps: "h" is the top and bottom gap, "v" the left and right.
 -- Each press changes them by gap_step pixels.
 local gap_step = 1
