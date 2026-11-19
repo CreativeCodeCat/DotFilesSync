@@ -14,6 +14,22 @@ QtObject {
     property var popupAt: null
     // when true, tags with no windows are hidden; toggled by Super+w
     property bool hideVacant: false
+    // when true, the dock stays up instead of hiding until the pointer reaches
+    // the bottom edge; toggled by `qs ipc call dock toggle`
+    property bool dockPinned: false
+
+    // the dock: windows minimized with Super+n. Hyprland keeps them on this
+    // hidden workspace, so it must match `minimized_ws` in hyprland.lua.
+    readonly property int minimizedWorkspace: 98
+    readonly property int dockHeight: 56
+    // gap between the dock and the bottom edge
+    readonly property int dockMargin: 8
+    // room above the dock for the window title shown on hover
+    readonly property int dockTipRoom: 34
+    // height in px of the strip at the bottom edge that shows the dock
+    readonly property int dockTrigger: 3
+    // ms the dock stays up after the pointer leaves it
+    readonly property int dockHideDelay: 400
 
     // notification popups
     readonly property int notificationWidth: 360

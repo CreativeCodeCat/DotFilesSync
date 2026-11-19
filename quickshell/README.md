@@ -31,6 +31,12 @@ you configure those in `~/.config/hypr/hyprland.lua`.
   a click dismisses it, and its action buttons work.
 - **System tray**: left click activates an item, middle click runs its
   secondary action.
+- **Dock**: along the bottom edge of each monitor, hidden until the pointer
+  reaches the bottom. It lists the windows you've minimized with Super+n or
+  the minimize button on the bar (`qs ipc call dock minimize`), as
+  icons with their titles on hover. Click one to bring it back to the
+  workspace you're on. It shows nothing while nothing is minimized, and
+  `qs ipc call dock toggle` pins it up.
 
 ## Files
 
@@ -51,6 +57,8 @@ Quickshell loads `shell.qml` from this folder. The rest is split by job:
   `qs ipc call power toggle`.
 - `hotkeys/Hotkeys.qml`: the hotkeys popup, from
   `qs ipc call hotkeys toggle`.
+- `dock/Dock.qml`: the dock along the bottom edge, one per monitor: the
+  edge strip that reveals it, the panel, and the minimized windows in it.
 - `notifications/Notifications.qml`: the notification server and its
   popups. It replaces dunst, which is no longer started.
 - `clipboard/Clipboard.qml`: the clipboard picker, from Super+F1 or
